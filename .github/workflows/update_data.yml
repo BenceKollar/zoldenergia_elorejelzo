@@ -2,14 +2,12 @@ name: Automatikus Adatfrissítés
 
 on:
   schedule:
-    - cron: '12,27,42,57 * * * *'
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 
 jobs:
   update-data:
     runs-on: ubuntu-latest
-    env:
-      TZ: 'Europe/Budapest'
     permissions:
       contents: write
 
@@ -25,11 +23,14 @@ jobs:
       - name: Csomagok telepítése
         run: pip install -r requirements.txt
 
-      - name: Adatgyűjtő futtatása
+      - name: Adatgyűjtés futtatása
         run: python data_collector.py
 
-      - name: Frissített adatbázis feltöltése
+      - name: Frissítési időpont rögzítése
+        run: date -u '+%Y-%m-%d %H:%M:%S UTC' > last_run.txt
+
+      - name: Frissített adatok feltöltése
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Automatikus frissítés: új energia és időjárás adatok"
-          file_pattern: 'energy_data.db'
+          commit_message: "Automatikus adatfrissítés"
+          file_pattern: 'energy_data.db last_run.txt'
