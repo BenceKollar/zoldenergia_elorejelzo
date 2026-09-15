@@ -35,4 +35,5 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add energy_data.db
           git commit -m "Automatikus frissítés: új energia és időjárás adatok" || echo "Nincs új adat"
+          git pull --rebase origin main
           git push
