@@ -154,7 +154,7 @@ else:
 
     with sub_tab_solar:
         fig_solar = go.Figure()
-        fig_solar.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['solar_mw'], mode='lines', name='Valós Termelés (MW)', line=dict(color='#f39c12', width=3)))
+        fig_solar.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['solar_mw'], mode='lines', name='Valós Termelés (MW)', line=dict(color='#f39c12', width=3), connectgaps=True))
         fig_solar.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['ai_solar_mw'], mode='lines', name='AI Predikció (MW)', line=dict(color='#3498db', width=2, dash='dash')))
         
         fig_solar.add_vline(x=last_real_time, line_width=2, line_dash="dash", line_color="rgba(255,0,0,0.5)", annotation_text="MOST (Valós adatok vége)", annotation_position="top right")
@@ -164,7 +164,7 @@ else:
 
     with sub_tab_wind:
         fig_wind = go.Figure()
-        fig_wind.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['wind_mw'], mode='lines', name='Valós Termelés (MW)', line=dict(color='#2ecc71', width=3)))
+        fig_wind.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['wind_mw'], mode='lines', name='Valós Termelés (MW)', line=dict(color='#2ecc71', width=3), connectgaps=True))
         fig_wind.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['ai_wind_mw'], mode='lines', name='AI Predikció (MW)', line=dict(color='#e74c3c', width=2, dash='dash')))
         
         fig_wind.add_vline(x=last_real_time, line_width=2, line_dash="dash", line_color="rgba(255,0,0,0.5)", annotation_text="MOST (Valós adatok vége)", annotation_position="top right")
