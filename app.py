@@ -55,7 +55,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data
+@st.cache_data(ttl=600)
 def load_data():
     conn = sqlite3.connect('energy_data.db')
     df = pd.read_sql_query("SELECT timestamp, solar_mw, wind_mw, temperature_2m, cloud_cover, wind_speed_10m, shortwave_radiation FROM power_production", conn)
