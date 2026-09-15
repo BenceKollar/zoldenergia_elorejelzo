@@ -55,8 +55,10 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data(ttl=600)
-def load_data():
+@st.fragment(run_every="15m")
+def render_app():
+    df = load_data()
+
     conn = sqlite3.connect('energy_data.db')
     df = pd.read_sql_query("SELECT timestamp, solar_mw, wind_mw, temperature_2m, cloud_cover, wind_speed_10m, shortwave_radiation FROM power_production", conn)
     conn.close()
@@ -168,6 +170,8 @@ else:
         fig_wind.add_trace(go.Scatter(x=filtered_df['timestamp'], y=filtered_df['ai_wind_mw'], mode='lines', name='AI Predikció (MW)', line=dict(color='#e74c3c', width=2, dash='dash')))
         
         fig_wind.add_vline(x=last_real_time, line_width=2, line_dash="dash", line_color="rgba(255,0,0,0.5)", annotation_text="MOST (Valós adatok vége)", annotation_position="top right")
+
+render_app()
         
         fig_wind.update_layout(xaxis_title='Időpont', yaxis_title='Teljesítmény (MW)', template='plotly_dark', margin=dict(t=30))
         st.plotly_chart(fig_wind, use_container_width=True)
