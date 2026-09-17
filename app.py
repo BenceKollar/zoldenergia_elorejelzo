@@ -267,7 +267,7 @@ def render_app():
                 })
 
             st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
-        elif page == "⚖️ Hálózati Egyensúly":
+    elif page == "⚖️ Hálózati Egyensúly":
         st.title("⚖️ Hálózati Egyensúly és Fedezeti Arány")
         st.write("A magyar villamosenergia-rendszer becsült fogyasztásának és a zöldenergia termelésének aránya.")
         
