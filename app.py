@@ -279,4 +279,5 @@ def render_app():
                 except Exception as e:
                     st.error(f"Rendszerhiba történt: {e}")
     else:
-        st.info("A chatbox használatához állítsd be a GEMINI_API_KEY-t a Streamlit Secrets-ben!")render_app()
+        st.info("A chatbox használatához állítsd be a GEMINI_API_KEY-t a Streamlit Secrets-ben!")
+render_app()
