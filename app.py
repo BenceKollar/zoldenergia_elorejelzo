@@ -276,7 +276,7 @@ def render_app():
                 return ''
 
             st.dataframe(
-                display_df.style.applymap(color_trends), 
+                display_df.style.map(color_trends), 
                 use_container_width=True, 
                 hide_index=True
             )
