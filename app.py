@@ -221,29 +221,33 @@ def render_app():
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
-    st.markdown(" Megújuló energiaforrás elemző AI Asszisztens")
+    st.markdown("### 🤖 Hálózat-elemző AI Asszisztens")
     st.write("Kérdezz rá a jelenlegi energiatermelésre, vagy kérj magyarázatot a várható trendekre!")
 
+    # Ellenőrizzük, hogy megvan-e a kulcs (de már NEM használjuk a genai.configure-t)
     if "GEMINI_API_KEY" in st.secrets:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         
+        # Chat history inicializálása
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
+        # Korábbi üzenetek kirajzolása
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
+        # Felhasználói beviteli mező
         if prompt := st.chat_input("Pl.: Miért ilyen alacsony most a naperőművek termelése?"):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
+            # AI válasz generálása KÖZVETLENÜL a weben keresztül (REST API)
             with st.chat_message("assistant"):
                 try:
                     latest = real_df.iloc[-1]
                     
-                    context = f"""Te egy professzionális hálózatirányító vagy. 
+                    context = f"""Te egy professzionális villamosmérnök és hálózatirányító vagy. 
                     A jelenlegi valós hálózati adatok a következők:
                     - Napelem termelés: {latest['solar_mw']:.1f} MW (Felhőzet: {latest['cloud_cover']}%)
                     - Szélerőmű termelés: {latest['wind_mw']:.1f} MW (Szélsebesség: {latest['wind_speed_10m']} km/h)
@@ -274,4 +278,5 @@ def render_app():
                         
                 except Exception as e:
                     st.error(f"Rendszerhiba történt: {e}")
-render_app()
+    else:
+        st.info("A chatbox használatához állítsd be a GEMINI_API_KEY-t a Streamlit Secrets-ben!")render_app()
