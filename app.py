@@ -80,7 +80,7 @@ def render_app():
     load_data.clear()
     df = load_data()
 
-   page = st.radio(
+    page = st.radio(
         "Navigáció", 
         ["🏠 Kezdőlap", "🎯 AI Sikeresség", "⚖️ Hálózati Egyensúly", "💾 Adatbázis és Export"], 
         horizontal=True, 
