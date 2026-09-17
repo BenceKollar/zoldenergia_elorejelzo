@@ -221,7 +221,7 @@ def render_app():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-    elif page == "🎯 AI Sikeresség":
+    elif page == "🎯 AI Előrejelzési Sikeresség":
         st.title("🎯 AI Előrejelzési Sikeresség (Napi Bontás)")
         st.write("A táblázat a már lezárt napok 0:00 - 24:00 közötti előrejelzési pontosságát mutatja.")
 
