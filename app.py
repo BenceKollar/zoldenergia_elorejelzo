@@ -224,25 +224,20 @@ def render_app():
     st.markdown("### 🤖 Hálózat-elemző AI Asszisztens")
     st.write("Kérdezz rá a jelenlegi energiatermelésre, vagy kérj magyarázatot a várható trendekre!")
 
-    # Ellenőrizzük, hogy megvan-e a kulcs (de már NEM használjuk a genai.configure-t)
     if "GEMINI_API_KEY" in st.secrets:
         
-        # Chat history inicializálása
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
-        # Korábbi üzenetek kirajzolása
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-        # Felhasználói beviteli mező
         if prompt := st.chat_input("Pl.: Miért ilyen alacsony most a naperőművek termelése?"):
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            # AI válasz generálása KÖZVETLENÜL a weben keresztül (REST API)
             with st.chat_message("assistant"):
                 try:
                     latest = real_df.iloc[-1]
@@ -261,7 +256,7 @@ def render_app():
                     valamint értékeld a saját gépi tanulási modellem becslését is!"""
                     
                     api_key = st.secrets["GEMINI_API_KEY"]
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
                     
                     payload = {
                         "contents": [{"parts": [{"text": context}]}]
