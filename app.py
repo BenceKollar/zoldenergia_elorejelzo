@@ -98,7 +98,7 @@ def render_app():
         df[["wind_speed_10m"]].fillna(0)
     )
 
-    st.markdown("### 🎯 AI Modell Pontossága (Utolsó 24 óra)")
+    st.markdown("###AI Modell Pontossága (Utolsó 24 óra)")
 
     col1, col2 = st.columns(2)
 
@@ -107,15 +107,15 @@ def render_app():
 
     with col1:
         if solar_acc is not None:
-            st.metric(label="☀️ Napelem Pontosság", value=f"{solar_acc}%")
+            st.metric(label=" Napenergia Pontosság", value=f"{solar_acc}%")
         else:
-            st.metric(label="☀️ Napelem Pontosság", value="Gyűjtés alatt...")
+            st.metric(label=" Napenergia Pontosság", value="Gyűjtés alatt...")
         
     with col2:
         if wind_acc is not None:
-            st.metric(label="🌪️ Szél Pontosság", value=f"{wind_acc}%")
+            st.metric(label=" Szélenergia Pontosság", value=f"{wind_acc}%")
         else:
-            st.metric(label="🌪️ Szél Pontosság", value="Gyűjtés alatt...")
+            st.metric(label=" Szélenergia Pontosság", value="Gyűjtés alatt...")
         
     st.divider() 
     st.write("Valós idejű hálózati adatok és AI jövőbeli becslések.")
