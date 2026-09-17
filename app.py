@@ -267,5 +267,81 @@ def render_app():
                 })
 
             st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
+        elif page == "⚖️ Hálózati Egyensúly":
+        st.title("⚖️ Hálózati Egyensúly és Fedezeti Arány")
+        st.write("A magyar villamosenergia-rendszer becsült fogyasztásának és a zöldenergia termelésének aránya.")
+        
+        real_df = df.dropna(subset=["solar_mw", "wind_mw"]).copy()
+        
+        if not real_df.empty:
+            import numpy as np
+            real_df['estimated_load_mw'] = 5500 + 1000 * np.sin((real_df['timestamp'].dt.hour - 6) * np.pi / 12)
+            real_df['total_green_mw'] = real_df['solar_mw'] + real_df['wind_mw']
+            real_df['green_ratio'] = (real_df['total_green_mw'] / real_df['estimated_load_mw']) * 100
+            
+            latest = real_df.iloc[-1]
+            
+            # Felső mérőszámok
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(label="Becsült Országos Fogyasztás", value=f"{latest['estimated_load_mw']:.0f} MW")
+            with col2:
+                st.metric(label="Összes Zöldenergia Termelés", value=f"{latest['total_green_mw']:.0f} MW")
+            with col3:
+                st.metric(label="🌿 Zöldenergia Fedezeti Arány", value=f"{latest['green_ratio']:.1f}%")
+                
+            st.divider()
+            
+            last_24h = real_df[real_df["timestamp"] >= real_df["timestamp"].max() - pd.Timedelta(days=2)]
+            
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=last_24h["timestamp"], y=last_24h["estimated_load_mw"],
+                mode="lines", name="Becsült Fogyasztás",
+                line=dict(color="#95a5a6", width=2),
+                fill='tozeroy', fillcolor='rgba(149, 165, 166, 0.1)'
+            ))
+            fig.add_trace(go.Scatter(
+                x=last_24h["timestamp"], y=last_24h["total_green_mw"],
+                mode="lines", name="Zöldenergia (Nap + Szél)",
+                line=dict(color="#2ecc71", width=3),
+                fill='tozeroy', fillcolor='rgba(46, 204, 113, 0.3)'
+            ))
+            fig.update_layout(
+                xaxis_title="Időpont (Utolsó 48 óra)", yaxis_title="Teljesítmény (MW)",
+                template="plotly_dark", hovermode="x unified"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("Nincs elegendő valós adat a hálózati elemzéshez.")
+
+    elif page == "💾 Adatbázis és Export":
+        st.title("💾 Nyers Adatbázis és CSV Export")
+        st.write("Itt böngészheted az SQLite adatbázisban rögzített összes múltbéli és jelenlegi mérést.")
+        
+        @st.cache_data
+        def convert_df_to_csv(dataframe):
+            return dataframe.to_csv(index=False).encode('utf-8')
+            
+        csv_data = convert_df_to_csv(df)
+        
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            st.download_button(
+                label="📥 Adatok letöltése (.CSV)",
+                data=csv_data,
+                file_name="mavir_energy_data.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        st.dataframe(
+            df.sort_values("timestamp", ascending=False), 
+            use_container_width=True, 
+            height=600,
+            hide_index=True
+        )
 
 render_app()
