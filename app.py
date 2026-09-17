@@ -98,7 +98,7 @@ def render_app():
         df[["wind_speed_10m"]].fillna(0)
     )
 
-    st.markdown("###AI Modell Pontossága (Utolsó 24 óra)")
+    st.markdown(" AI Modell Pontossága (Utolsó 24 óra)")
 
     col1, col2 = st.columns(2)
 
