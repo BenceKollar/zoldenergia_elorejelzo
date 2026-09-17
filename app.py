@@ -80,8 +80,13 @@ def render_app():
     load_data.clear()
     df = load_data()
 
-    st.sidebar.title(" Navigáció")
-    page = st.sidebar.radio("Válassz oldalt:", [" Kezdőlap", " AI Előrejelzési Sikeresség"])
+    page = st.radio(
+        "Navigáció", 
+        [" Kezdőlap", " AI Előrejelzési Sikeresség"], 
+        horizontal=True, 
+        label_visibility="collapsed"
+    )
+    st.markdown("<br>", unsafe_allow_html=True)
 
     if df.empty:
         st.warning("Még nincsenek adatok az adatbázisban!")
