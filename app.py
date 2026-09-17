@@ -252,7 +252,7 @@ def render_app():
                     A felhasználó kérdése: {prompt}
                     Válaszolj tömören, szakmaian, és támaszkodj a fenti konkrét mérési adatokra!"""
                     
-                    model = genai.GenerativeModel('gemini-pro')
+                    model = genai.GenerativeModel('gemini-1.5-flash')
                     response = model.generate_content(context)
                     
                     st.markdown(response.text)
