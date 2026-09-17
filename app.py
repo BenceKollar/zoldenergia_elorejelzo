@@ -85,8 +85,8 @@ def render_app():
 
     col1, col2 = st.columns(2)
 
-    solar_acc = calculate_accuracy(df, 'solar_mw', 'solar_mw', 24)
-    wind_acc = calculate_accuracy(df, 'wind_mw', 'wind_mw', 24)
+    solar_acc = calculate_accuracy(df, 'solar_mw', 'ai_solar_mw', 24)
+    wind_acc = calculate_accuracy(df, 'wind_mw', 'ai_wind_mw', 24)
 
     with col1:
         if solar_acc is not None:
