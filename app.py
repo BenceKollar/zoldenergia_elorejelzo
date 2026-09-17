@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestRegressor
 from pathlib import Path
 import numpy as np
-import google.generativeai as genai
+import requests
 
 DB_PATH = Path(__file__).parent / "energy_data.db"
 
@@ -221,7 +221,7 @@ def render_app():
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("---")
-    st.markdown(" Hálózat-elemző AI Asszisztens")
+    st.markdown(" Megújuló energiaforrás elemző AI Asszisztens")
     st.write("Kérdezz rá a jelenlegi energiatermelésre, vagy kérj magyarázatot a várható trendekre!")
 
     if "GEMINI_API_KEY" in st.secrets:
@@ -244,21 +244,34 @@ def render_app():
                     latest = real_df.iloc[-1]
                     
                     context = f"""Te egy professzionális hálózatirányító vagy. 
-                    A jelenlegi hazai hálózati adatok a következők:
-                    - Napelem termelés: {latest['solar_mw']:.1f} MW (Felhőzet: {latest['cloud_cover']}%, Napsugárzás: {latest['shortwave_radiation']} W/m2)
+                    A jelenlegi valós hálózati adatok a következők:
+                    - Napelem termelés: {latest['solar_mw']:.1f} MW (Felhőzet: {latest['cloud_cover']}%)
                     - Szélerőmű termelés: {latest['wind_mw']:.1f} MW (Szélsebesség: {latest['wind_speed_10m']} km/h)
-                    - Hőmérséklet: {latest['temperature_2m']} °C
+                    
+                    A saját, Random Forest gépi tanulási modellem előrejelzése (predikciója) ezekre a percekre:
+                    - Napelem becslés: {latest['ai_solar_mw']:.1f} MW
+                    - Szél becslés: {latest['ai_wind_mw']:.1f} MW
                     
                     A felhasználó kérdése: {prompt}
-                    Válaszolj tömören, szakmaian, és támaszkodj a fenti konkrét mérési adatokra!"""
+                    Válaszolj tömören, szakmaian, és a magyarázatodhoz használd fel a valós adatokat, 
+                    valamint értékeld a saját gépi tanulási modellem becslését is!"""
                     
-                    model = genai.GenerativeModel('gemini-1.5-flash')
-                    response = model.generate_content(context)
+                    api_key = st.secrets["GEMINI_API_KEY"]
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                     
-                    st.markdown(response.text)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    payload = {
+                        "contents": [{"parts": [{"text": context}]}]
+                    }
+                    
+                    response = requests.post(url, json=payload)
+                    
+                    if response.status_code == 200:
+                        answer = response.json()['candidates'][0]['content']['parts'][0]['text']
+                        st.markdown(answer)
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                    else:
+                        st.error(f"API Hiba: {response.status_code} - {response.text}")
+                        
                 except Exception as e:
-                    st.error(f"Hiba történt az API hívása során: {e}")
-    else:
-        st.info("A chatbox használatához állítsd be a GEMINI_API_KEY-t a Streamlit Secrets-ben!")
+                    st.error(f"Rendszerhiba történt: {e}")
 render_app()
