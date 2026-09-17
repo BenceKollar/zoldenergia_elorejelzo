@@ -253,9 +253,9 @@ def render_app():
                 if pd.isna(diff) or diff == 0:
                     return f"{val}% ➖"
                 elif diff > 0:
-                    return f"{val}% 🟢 ⬆️ (+{diff:.1f}%)"
+                    return f"{val}% ▲ (+{diff:.1f}%)"
                 else:
-                    return f"{val}% 🔴 ⬇️ ({diff:.1f}%)"
+                    return f"{val}% ▼ ({diff:.1f}%)"
                     
             display_data = []
             for date, row in daily.sort_index(ascending=False).iterrows():
@@ -265,7 +265,22 @@ def render_app():
                     "Szélenergia": format_trend(row['win_acc'], row['win_diff']),
                     "Teljes becslés aránya": f"{row['tot_ratio']}%"
                 })
+            display_df = pd.DataFrame(display_data)
+            
+            def color_trends(val):
+                if isinstance(val, str):
+                    if '▲' in val:
+                        return 'color: #2ecc71;'  
+                    elif '▼' in val:
+                        return 'color: #e74c3c;'  
+                return ''
 
+            st.dataframe(
+                display_df.style.applymap(color_trends), 
+                use_container_width=True, 
+                hide_index=True
+            )
+            
             st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
             
     elif page == "⚖️ Hálózati Egyensúly":
