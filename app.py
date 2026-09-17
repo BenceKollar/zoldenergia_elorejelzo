@@ -253,10 +253,10 @@ def render_app():
                 if pd.isna(diff) or diff == 0:
                     return f"{val}% ➖"
                 elif diff > 0:
-                    return f"{val}% 🟢 (+{diff:.1f}%)"
+                    return f"{val}% 🟢 ⬆️ (+{diff:.1f}%)"
                 else:
-                    return f"{val}% 🔴 ({diff:.1f}%)"
-
+                    return f"{val}% 🔴 ⬇️ ({diff:.1f}%)"
+                    
             display_data = []
             for date, row in daily.sort_index(ascending=False).iterrows():
                 display_data.append({
