@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestRegressor
 from pathlib import Path
 import numpy as np
+import google.generativeai as genai
 
 DB_PATH = Path(__file__).parent / "energy_data.db"
 
@@ -219,5 +220,45 @@ def render_app():
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("---")
+    st.markdown(" Hálózat-elemző AI Asszisztens")
+    st.write("Kérdezz rá a jelenlegi energiatermelésre, vagy kérj magyarázatot a várható trendekre!")
 
+    if "GEMINI_API_KEY" in st.secrets:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        if prompt := st.chat_input("Pl.: Miért ilyen alacsony most a naperőművek termelése?"):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                try:
+                    latest = real_df.iloc[-1]
+                    
+                    context = f"""Te egy professzionális hálózatirányító vagy. 
+                    A jelenlegi hazai hálózati adatok a következők:
+                    - Napelem termelés: {latest['solar_mw']:.1f} MW (Felhőzet: {latest['cloud_cover']}%, Napsugárzás: {latest['shortwave_radiation']} W/m2)
+                    - Szélerőmű termelés: {latest['wind_mw']:.1f} MW (Szélsebesség: {latest['wind_speed_10m']} km/h)
+                    - Hőmérséklet: {latest['temperature_2m']} °C
+                    
+                    A felhasználó kérdése: {prompt}
+                    Válaszolj tömören, szakmaian, és támaszkodj a fenti konkrét mérési adatokra!"""
+                    
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    response = model.generate_content(context)
+                    
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                except Exception as e:
+                    st.error(f"Hiba történt az API hívása során: {e}")
+    else:
+        st.info("A chatbox használatához állítsd be a GEMINI_API_KEY-t a Streamlit Secrets-ben!")
 render_app()
