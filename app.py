@@ -82,7 +82,7 @@ def render_app():
 
     page = st.radio(
         "Navigáció", 
-        ["🏠 Kezdőlap", "🎯 AI Sikeresség", "⚖️ Hálózati Egyensúly", "💾 Adatbázis és Export"], 
+        ["🏠 Kezdőlap", "🎯 AI Előrejelzési Sikeresség", "⚖️ Hálózati Egyensúly", "💾 Adatbázis és Export"], 
         horizontal=True, 
         label_visibility="collapsed"
     )
@@ -105,7 +105,7 @@ def render_app():
         df[["wind_speed_10m"]].fillna(0)
     )
 
-    if page == " Kezdőlap":
+    if page == "🏠 Kezdőlap":
         st.title("⚡ Megújuló Energia Monitor & AI Előrejelző")
         st.markdown("### AI Modell Pontossága (Utolsó 24 óra)")
 
@@ -221,7 +221,7 @@ def render_app():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-    elif page == " AI Előrejelzési Sikeresség":
+    elif page == "🎯 AI Előrejelzési Sikeresség":
         st.title(" AI Előrejelzési Sikeresség (Napi Bontás)")
         st.write("A táblázat a már lezárt napok 0:00 - 24:00 közötti előrejelzési pontosságát mutatja.")
 
