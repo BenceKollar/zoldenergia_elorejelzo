@@ -282,8 +282,6 @@ def render_app():
             
             latest = real_df.iloc[-1]
             
-            # Napi összesítések (MWh) kiszámolása a mai napra (0:00-tól mostanáig)
-            # Mivel 15 perces adataink vannak, az összeget 4-gyel osztva kapjuk meg a Megawattórát (MWh)
             today_date = latest['timestamp'].date()
             today_df = real_df[real_df['timestamp'].dt.date == today_date]
             
@@ -291,7 +289,6 @@ def render_app():
             daily_green_mwh = today_df['total_green_mw'].sum() / 4
             daily_ratio = (daily_green_mwh / daily_load_mwh * 100) if daily_load_mwh > 0 else 0
             
-            # --- FELSŐ SOR: JELENLEGI (Pillanatnyi MW) ---
             st.markdown("#### ⚡ Pillanatnyi hálózati adatok")
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -303,7 +300,6 @@ def render_app():
                 
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # --- ALSÓ SOR: NAPI (Összesített MWh) ---
             st.markdown("#### 📅 Mai napi összesített adatok (0:00-tól)")
             col4, col5, col6 = st.columns(3)
             with col4:
@@ -315,7 +311,6 @@ def render_app():
                 
             st.divider()
             
-            # Grafikon rajzolása (Kitöltött területtel)
             last_24h = real_df[real_df["timestamp"] >= real_df["timestamp"].max() - pd.Timedelta(days=2)]
             
             fig = go.Figure()
@@ -340,13 +335,15 @@ def render_app():
             st.warning("Nincs elegendő valós adat a hálózati elemzéshez.")
     elif page == "💾 Adatbázis és Export":
         st.title("💾 Nyers Adatbázis és CSV Export")
-        st.write("Itt böngészheted az SQLite adatbázisban rögzített összes múltbéli és jelenlegi mérést.")
+        st.write("Itt böngészheted az SQLite adatbázisban rögzített összes múltbéli mérést (a jövőbeli becslések nélkül).")
+        
+        real_df = df.dropna(subset=["solar_mw", "wind_mw"]).copy()
         
         @st.cache_data
         def convert_df_to_csv(dataframe):
             return dataframe.to_csv(index=False).encode('utf-8')
             
-        csv_data = convert_df_to_csv(df)
+        csv_data = convert_df_to_csv(real_df)
         
         col1, col2 = st.columns([1, 3])
         with col1:
@@ -361,7 +358,7 @@ def render_app():
         st.markdown("<br>", unsafe_allow_html=True)
         
         st.dataframe(
-            df.sort_values("timestamp", ascending=False), 
+            real_df.sort_values("timestamp", ascending=False), 
             use_container_width=True, 
             height=600,
             hide_index=True
