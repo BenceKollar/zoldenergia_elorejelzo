@@ -81,6 +81,23 @@ def render_app():
     df = load_data()
 
     st.title("⚡ Megújuló Energia Monitor & AI Előrejelző")
+    
+    if df.empty:
+        st.warning("Még nincsenek adatok az adatbázisban!")
+        return
+
+    solar_model, wind_model = train_models(df)
+    if solar_model is None:
+        st.warning("Még nincs elég valós adat az AI modellek betanításához.")
+        return
+
+    df["ai_solar_mw"] = solar_model.predict(
+        df[["temperature_2m", "shortwave_radiation"]].fillna(0)
+    )
+    df["ai_wind_mw"] = wind_model.predict(
+        df[["wind_speed_10m"]].fillna(0)
+    )
+
     st.markdown("### 🎯 AI Modell Pontossága (Utolsó 24 óra)")
 
     col1, col2 = st.columns(2)
@@ -103,22 +120,7 @@ def render_app():
     st.divider() 
     st.write("Valós idejű hálózati adatok és AI jövőbeli becslések.")
 
-    if df.empty:
-        st.warning("Még nincsenek adatok az adatbázisban!")
-        return
-
-    solar_model, wind_model = train_models(df)
-    if solar_model is None:
-        st.warning("Még nincs elég valós adat az AI modellek betanításához.")
-        return
-
-    df["ai_solar_mw"] = solar_model.predict(
-        df[["temperature_2m", "shortwave_radiation"]].fillna(0)
-    )
-    df["ai_wind_mw"] = wind_model.predict(
-        df[["wind_speed_10m"]].fillna(0)
-    )
-
+    real_df = df.dropna(subset=["solar_mw", "wind_mw"])
     real_df = df.dropna(subset=["solar_mw", "wind_mw"])
     if real_df.empty:
         st.warning("Még nincsenek valós energiaadatok.")
