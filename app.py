@@ -267,6 +267,7 @@ def render_app():
                 })
 
             st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
+            
     elif page == "⚖️ Hálózati Egyensúly":
         st.title("⚖️ Hálózati Egyensúly és Fedezeti Arány")
         st.write("A magyar villamosenergia-rendszer becsült fogyasztásának és a zöldenergia termelésének aránya.")
@@ -281,17 +282,40 @@ def render_app():
             
             latest = real_df.iloc[-1]
             
-            # Felső mérőszámok
+            # Napi összesítések (MWh) kiszámolása a mai napra (0:00-tól mostanáig)
+            # Mivel 15 perces adataink vannak, az összeget 4-gyel osztva kapjuk meg a Megawattórát (MWh)
+            today_date = latest['timestamp'].date()
+            today_df = real_df[real_df['timestamp'].dt.date == today_date]
+            
+            daily_load_mwh = today_df['estimated_load_mw'].sum() / 4
+            daily_green_mwh = today_df['total_green_mw'].sum() / 4
+            daily_ratio = (daily_green_mwh / daily_load_mwh * 100) if daily_load_mwh > 0 else 0
+            
+            # --- FELSŐ SOR: JELENLEGI (Pillanatnyi MW) ---
+            st.markdown("#### ⚡ Pillanatnyi hálózati adatok")
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric(label="Becsült Országos Fogyasztás", value=f"{latest['estimated_load_mw']:.0f} MW")
+                st.metric(label="Jelenlegi becsült fogyasztás", value=f"{latest['estimated_load_mw']:.0f} MW")
             with col2:
-                st.metric(label="Összes Zöldenergia Termelés", value=f"{latest['total_green_mw']:.0f} MW")
+                st.metric(label="Jelenlegi termelés", value=f"{latest['total_green_mw']:.0f} MW")
             with col3:
-                st.metric(label="🌿 Zöldenergia Fedezeti Arány", value=f"{latest['green_ratio']:.1f}%")
+                st.metric(label="Jelenlegi zöldenergia fedezet", value=f"{latest['green_ratio']:.1f}%")
+                
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # --- ALSÓ SOR: NAPI (Összesített MWh) ---
+            st.markdown("#### 📅 Mai napi összesített adatok (0:00-tól)")
+            col4, col5, col6 = st.columns(3)
+            with col4:
+                st.metric(label="Napi becsült fogyasztás", value=f"{daily_load_mwh:.0f} MWh")
+            with col5:
+                st.metric(label="Napi termelés", value=f"{daily_green_mwh:.0f} MWh")
+            with col6:
+                st.metric(label="Napi zöldenergia fedezet", value=f"{daily_ratio:.1f}%")
                 
             st.divider()
             
+            # Grafikon rajzolása (Kitöltött területtel)
             last_24h = real_df[real_df["timestamp"] >= real_df["timestamp"].max() - pd.Timedelta(days=2)]
             
             fig = go.Figure()
@@ -314,7 +338,6 @@ def render_app():
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.warning("Nincs elegendő valós adat a hálózati elemzéshez.")
-
     elif page == "💾 Adatbázis és Export":
         st.title("💾 Nyers Adatbázis és CSV Export")
         st.write("Itt böngészheted az SQLite adatbázisban rögzített összes múltbéli és jelenlegi mérést.")
