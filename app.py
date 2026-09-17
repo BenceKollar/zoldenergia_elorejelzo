@@ -221,8 +221,8 @@ def render_app():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-    elif page == "🎯 AI Előrejelzési Sikeresség":
-        st.title(" AI Előrejelzési Sikeresség (Napi Bontás)")
+    elif page == "🎯 AI Sikeresség":
+        st.title("🎯 AI Előrejelzési Sikeresség (Napi Bontás)")
         st.write("A táblázat a már lezárt napok 0:00 - 24:00 közötti előrejelzési pontosságát mutatja.")
 
         import datetime
@@ -256,7 +256,7 @@ def render_app():
                     return f"{val}% ▲ (+{diff:.1f}%)"
                 else:
                     return f"{val}% ▼ ({diff:.1f}%)"
-                    
+
             display_data = []
             for date, row in daily.sort_index(ascending=False).iterrows():
                 display_data.append({
@@ -265,14 +265,15 @@ def render_app():
                     "Szélenergia": format_trend(row['win_acc'], row['win_diff']),
                     "Teljes becslés aránya": f"{row['tot_ratio']}%"
                 })
+
             display_df = pd.DataFrame(display_data)
-            
+
             def color_trends(val):
                 if isinstance(val, str):
                     if '▲' in val:
-                        return 'color: #2ecc71;'  
+                        return 'color: #2ecc71;' 
                     elif '▼' in val:
-                        return 'color: #e74c3c;'  
+                        return 'color: #e74c3c;'
                 return ''
 
             st.dataframe(
@@ -280,8 +281,6 @@ def render_app():
                 use_container_width=True, 
                 hide_index=True
             )
-            
-            st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
             
     elif page == "⚖️ Hálózati Egyensúly":
         st.title("⚖️ Hálózati Egyensúly és Fedezeti Arány")
