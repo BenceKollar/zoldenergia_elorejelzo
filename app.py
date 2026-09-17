@@ -46,6 +46,20 @@ def load_data():
     df[cols] = df[cols].ffill()
     return df
 
+def calculate_accuracy(df, real_col, pred_col, hours=24):
+    temp_df = df.dropna(subset=[real_col, pred_col]).copy()
+    temp_df = temp_df.tail(hours * 4)
+    
+    if temp_df.empty or temp_df[real_col].sum() == 0:
+        return None
+        
+    sum_error = abs(temp_df[real_col] - temp_df[pred_col]).sum()
+    sum_real = temp_df[real_col].sum()
+    
+    accuracy = 100 - ((sum_error / sum_real) * 100)
+    
+    return round(max(0, accuracy), 1)
+
 
 def train_models(data):
     clean = data.dropna(subset=["solar_mw", "wind_mw"]).copy()
@@ -62,12 +76,31 @@ def train_models(data):
 
 @st.fragment(run_every="15m")
 def render_app():
-    # 15 percenként újra lefut az aktív oldal.
-    # A cache 10 perc után lejár, ezért az új SQLite adat is beolvasódik.
+
     load_data.clear()
     df = load_data()
 
     st.title("⚡ Megújuló Energia Monitor & AI Előrejelző")
+    st.markdown("### 🎯 AI Modell Pontossága (Utolsó 24 óra)")
+
+    col1, col2 = st.columns(2)
+
+    solar_acc = calculate_accuracy(df, 'solar_mw', 'solar_pred_mw', 24)
+    wind_acc = calculate_accuracy(df, 'wind_mw', 'wind_pred_mw', 24)
+
+    with col1:
+        if solar_acc is not None:
+            st.metric(label="☀️ Napelem Pontosság", value=f"{solar_acc}%")
+        else:
+            st.metric(label="☀️ Napelem Pontosság", value="Gyűjtés alatt...")
+        
+    with col2:
+        if wind_acc is not None:
+            st.metric(label="🌪️ Szél Pontosság", value=f"{wind_acc}%")
+        else:
+            st.metric(label="🌪️ Szél Pontosság", value="Gyűjtés alatt...")
+        
+    st.divider() 
     st.write("Valós idejű hálózati adatok és AI jövőbeli becslések.")
 
     if df.empty:
