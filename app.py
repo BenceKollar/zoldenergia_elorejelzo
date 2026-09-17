@@ -256,7 +256,7 @@ def render_app():
                     valamint értékeld a saját gépi tanulási modellem becslését is!"""
                     
                     api_key = st.secrets["GEMINI_API_KEY"]
-                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
                     
                     payload = {
                         "contents": [{"parts": [{"text": context}]}]
