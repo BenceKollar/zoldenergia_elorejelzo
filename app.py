@@ -80,8 +80,9 @@ def render_app():
     load_data.clear()
     df = load_data()
 
-    st.title("⚡ Megújuló Energia Monitor & AI Előrejelző")
-    
+    st.sidebar.title(" Navigáció")
+    page = st.sidebar.radio("Válassz oldalt:", [" Kezdőlap", " AI Előrejelzési Sikeresség"])
+
     if df.empty:
         st.warning("Még nincsenek adatok az adatbázisban!")
         return
@@ -91,6 +92,7 @@ def render_app():
         st.warning("Még nincs elég valós adat az AI modellek betanításához.")
         return
 
+    # Predikciók legenerálása a teljes adatbázisra (mindkét oldalhoz kell)
     df["ai_solar_mw"] = solar_model.predict(
         df[["temperature_2m", "shortwave_radiation"]].fillna(0)
     )
@@ -98,125 +100,167 @@ def render_app():
         df[["wind_speed_10m"]].fillna(0)
     )
 
-    st.markdown(" AI Modell Pontossága (Utolsó 24 óra)")
+    if page == " Kezdőlap":
+        st.title("⚡ Megújuló Energia Monitor & AI Előrejelző")
+        st.markdown("### AI Modell Pontossága (Utolsó 24 óra)")
 
-    col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
-    solar_acc = calculate_accuracy(df, 'solar_mw', 'ai_solar_mw', 24)
-    wind_acc = calculate_accuracy(df, 'wind_mw', 'ai_wind_mw', 24)
+        solar_acc = calculate_accuracy(df, 'solar_mw', 'ai_solar_mw', 24)
+        wind_acc = calculate_accuracy(df, 'wind_mw', 'ai_wind_mw', 24)
 
-    with col1:
-        if solar_acc is not None:
-            st.metric(label=" Napenergia Pontosság", value=f"{solar_acc}%")
-        else:
-            st.metric(label=" Napenergia Pontosság", value="Gyűjtés alatt...")
-        
-    with col2:
-        if wind_acc is not None:
-            st.metric(label=" Szélenergia Pontosság", value=f"{wind_acc}%")
-        else:
-            st.metric(label=" Szélenergia Pontosság", value="Gyűjtés alatt...")
-        
-    st.divider() 
-    st.write("Valós idejű hálózati adatok és AI jövőbeli becslések.")
+        with col1:
+            st.metric(label="☀️ Napenergia Pontosság", value=f"{solar_acc}%" if solar_acc else "Gyűjtés alatt...")
+            
+        with col2:
+            st.metric(label="🌪️ Szélenergia Pontosság", value=f"{wind_acc}%" if wind_acc else "Gyűjtés alatt...")
+            
+        st.divider() 
+        st.write("Valós idejű hálózati adatok és AI jövőbeli becslések.")
 
-    real_df = df.dropna(subset=["solar_mw", "wind_mw"])
-    real_df = df.dropna(subset=["solar_mw", "wind_mw"])
-    if real_df.empty:
-        st.warning("Még nincsenek valós energiaadatok.")
-        return
+        real_df = df.dropna(subset=["solar_mw", "wind_mw"])
+        if real_df.empty:
+            st.warning("Még nincsenek valós energiaadatok.")
+            return
 
-    latest = real_df.iloc[-1]
-    last_real_time = real_df["timestamp"].max()
+        latest = real_df.iloc[-1]
+        last_real_time = real_df["timestamp"].max()
 
-    st.markdown(
-        f"<div style='color:#aaa;margin-bottom:20px;'>"
-        f"Utolsó rögzített valós mérés: <b>{latest['timestamp']}</b></div>",
-        unsafe_allow_html=True
-    )
-
-    col1, col2 = st.columns(2)
-
-    with col1:
         st.markdown(
-            f"<div class='metric-card wind-card'>"
-            f"<div class='metric-title'>Szélerőművi Betáplálás (Valós)</div>"
-            f"<div class='metric-value'>{latest['wind_mw']:.1f} MW</div></div>",
+            f"<div style='color:#aaa;margin-bottom:20px;'>"
+            f"Utolsó rögzített valós mérés: <b>{latest['timestamp']}</b></div>",
             unsafe_allow_html=True
         )
 
-    with col2:
-        st.markdown(
-            f"<div class='metric-card solar-card'>"
-            f"<div class='metric-title'>Naperőművi Betáplálás (Valós)</div>"
-            f"<div class='metric-value'>{latest['solar_mw']:.1f} MW</div></div>",
-            unsafe_allow_html=True
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown(
+                f"<div class='metric-card wind-card'>"
+                f"<div class='metric-title'>Szélerőművi Betáplálás (Valós)</div>"
+                f"<div class='metric-value'>{latest['wind_mw']:.1f} MW</div></div>",
+                unsafe_allow_html=True
+            )
+
+        with col2:
+            st.markdown(
+                f"<div class='metric-card solar-card'>"
+                f"<div class='metric-title'>Naperőművi Betáplálás (Valós)</div>"
+                f"<div class='metric-value'>{latest['solar_mw']:.1f} MW</div></div>",
+                unsafe_allow_html=True
+            )
+
+        st.markdown("---")
+
+        time_filter = st.radio(
+            "Válaszd ki a megjeleníteni kívánt időszakot:",
+            ["Utolsó 24 óra (1 nap) + Jövő", "Utolsó 1 hét + Jövő",
+             "Utolsó 1 hónap + Jövő", "Összes adat"],
+            horizontal=True
         )
 
-    st.markdown("---")
+        if time_filter == "Utolsó 24 óra (1 nap) + Jövő":
+            filtered = df[df["timestamp"] >= last_real_time - pd.Timedelta(days=1)]
+        elif time_filter == "Utolsó 1 hét + Jövő":
+            filtered = df[df["timestamp"] >= last_real_time - pd.Timedelta(days=7)]
+        elif time_filter == "Utolsó 1 hónap + Jövő":
+            filtered = df[df["timestamp"] >= last_real_time - pd.Timedelta(days=30)]
+        else:
+            filtered = df
 
-    time_filter = st.radio(
-        "Válaszd ki a megjeleníteni kívánt időszakot:",
-        ["Utolsó 24 óra (1 nap) + Jövő", "Utolsó 1 hét + Jövő",
-         "Utolsó 1 hónap + Jövő", "Összes adat"],
-        horizontal=True
-    )
+        tab_solar, tab_wind = st.tabs(["Naperőművek", "Szélerőművek"])
 
-    if time_filter == "Utolsó 24 óra (1 nap) + Jövő":
-        filtered = df[df["timestamp"] >= last_real_time - pd.Timedelta(days=1)]
-    elif time_filter == "Utolsó 1 hét + Jövő":
-        filtered = df[df["timestamp"] >= last_real_time - pd.Timedelta(days=7)]
-    elif time_filter == "Utolsó 1 hónap + Jövő":
-        filtered = df[df["timestamp"] >= last_real_time - pd.Timedelta(days=30)]
-    else:
-        filtered = df
+        with tab_solar:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=filtered["timestamp"], y=filtered["solar_mw"],
+                mode="lines", name="Valós Termelés (MW)",
+                line=dict(color="#f39c12", width=3), connectgaps=True
+            ))
+            fig.add_trace(go.Scatter(
+                x=filtered["timestamp"], y=filtered["ai_solar_mw"],
+                mode="lines", name="AI Predikció (MW)",
+                line=dict(color="#3498db", width=2, dash="dash")
+            ))
+            fig.add_vline(
+                x=last_real_time, line_width=2, line_dash="dash",
+                line_color="rgba(255,0,0,.5)",
+                annotation_text="MOST (Valós adatok vége)"
+            )
+            fig.update_layout(
+                xaxis_title="Időpont", yaxis_title="Teljesítmény (MW)",
+                template="plotly_dark", margin=dict(t=30)
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-    tab_solar, tab_wind = st.tabs(["Naperőművek", "Szélerőművek"])
+        with tab_wind:
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=filtered["timestamp"], y=filtered["wind_mw"],
+                mode="lines", name="Valós Termelés (MW)",
+                line=dict(color="#2ecc71", width=3), connectgaps=True
+            ))
+            fig.add_trace(go.Scatter(
+                x=filtered["timestamp"], y=filtered["ai_wind_mw"],
+                mode="lines", name="AI Predikció (MW)",
+                line=dict(color="#e74c3c", width=2, dash="dash")
+            ))
+            fig.add_vline(
+                x=last_real_time, line_width=2, line_dash="dash",
+                line_color="rgba(255,0,0,.5)",
+                annotation_text="MOST (Valós adatok vége)"
+            )
+            fig.update_layout(
+                xaxis_title="Időpont", yaxis_title="Teljesítmény (MW)",
+                template="plotly_dark", margin=dict(t=30)
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-    with tab_solar:
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=filtered["timestamp"], y=filtered["solar_mw"],
-            mode="lines", name="Valós Termelés (MW)",
-            line=dict(color="#f39c12", width=3), connectgaps=True
-        ))
-        fig.add_trace(go.Scatter(
-            x=filtered["timestamp"], y=filtered["ai_solar_mw"],
-            mode="lines", name="AI Predikció (MW)",
-            line=dict(color="#3498db", width=2, dash="dash")
-        ))
-        fig.add_vline(
-            x=last_real_time, line_width=2, line_dash="dash",
-            line_color="rgba(255,0,0,.5)",
-            annotation_text="MOST (Valós adatok vége)"
-        )
-        fig.update_layout(
-            xaxis_title="Időpont", yaxis_title="Teljesítmény (MW)",
-            template="plotly_dark", margin=dict(t=30)
-        )
-        st.plotly_chart(fig, use_container_width=True)
+    elif page == " AI Előrejelzési Sikeresség":
+        st.title(" AI Előrejelzési Sikeresség (Napi Bontás)")
+        st.write("A táblázat a már lezárt napok 0:00 - 24:00 közötti előrejelzési pontosságát mutatja.")
 
-    with tab_wind:
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=filtered["timestamp"], y=filtered["wind_mw"],
-            mode="lines", name="Valós Termelés (MW)",
-            line=dict(color="#2ecc71", width=3), connectgaps=True
-        ))
-        fig.add_trace(go.Scatter(
-            x=filtered["timestamp"], y=filtered["ai_wind_mw"],
-            mode="lines", name="AI Predikció (MW)",
-            line=dict(color="#e74c3c", width=2, dash="dash")
-        ))
-        fig.add_vline(
-            x=last_real_time, line_width=2, line_dash="dash",
-            line_color="rgba(255,0,0,.5)",
-            annotation_text="MOST (Valós adatok vége)"
-        )
-        fig.update_layout(
-            xaxis_title="Időpont", yaxis_title="Teljesítmény (MW)",
-            template="plotly_dark", margin=dict(t=30)
-        )
-        st.plotly_chart(fig, use_container_width=True)
+        import datetime
+        df['date'] = df['timestamp'].dt.date
+        today = datetime.datetime.now().date()
+        
+        past_df = df[df['date'] < today].dropna(subset=["solar_mw", "wind_mw"])
+
+        if past_df.empty:
+            st.info("Még nincs elegendő lezárt napi adat a statisztika elkészítéséhez.")
+        else:
+            daily = past_df.groupby('date').apply(lambda x: pd.Series({
+                'real_sol': x['solar_mw'].sum(),
+                'ai_sol': x['ai_solar_mw'].sum(),
+                'real_win': x['wind_mw'].sum(),
+                'ai_win': x['ai_wind_mw'].sum()
+            }))
+
+            daily['sol_acc'] = (100 - (abs(daily['real_sol'] - daily['ai_sol']) / daily['real_sol'].replace(0, 1)) * 100).clip(lower=0).round(1)
+            daily['win_acc'] = (100 - (abs(daily['real_win'] - daily['ai_win']) / daily['real_win'].replace(0, 1)) * 100).clip(lower=0).round(1)
+            
+            daily['tot_ratio'] = (((daily['ai_sol'] + daily['ai_win']) / (daily['real_sol'] + daily['real_win']).replace(0, 1)) * 100).round(1)
+
+            daily['sol_diff'] = daily['sol_acc'].diff()
+            daily['win_diff'] = daily['win_acc'].diff()
+
+            def format_trend(val, diff):
+                if pd.isna(diff) or diff == 0:
+                    return f"{val}% ➖"
+                elif diff > 0:
+                    return f"{val}% 🟢 (+{diff:.1f}%)"
+                else:
+                    return f"{val}% 🔴 ({diff:.1f}%)"
+
+            display_data = []
+            for date, row in daily.sort_index(ascending=False).iterrows():
+                display_data.append({
+                    "Dátum": date.strftime("%Y. %m. %d."),
+                    "Napenergia": format_trend(row['sol_acc'], row['sol_diff']),
+                    "Szélenergia": format_trend(row['win_acc'], row['win_diff']),
+                    "Teljes becslés aránya": f"{row['tot_ratio']}%"
+                })
+
+            st.dataframe(pd.DataFrame(display_data), use_container_width=True, hide_index=True)
 
 render_app()
