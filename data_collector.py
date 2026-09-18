@@ -1,6 +1,8 @@
 import sqlite3
 import requests
 from datetime import datetime
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
 
 DB_NAME = "energy_data.db"
 
@@ -26,7 +28,7 @@ def init_db():
             cursor.execute("ALTER TABLE power_production ADD COLUMN ai_wind_mw REAL;")
             conn.commit()
             print("Új AI oszlopok sikeresen létrehozva az adatbázisban!")
-        except sqlite3.OperationalError:
+    except sqlite3.OperationalError:
             pass
     conn.commit()
     conn.close()
@@ -81,9 +83,6 @@ def fetch_and_store_data():
         cursor = conn.cursor()
         changed_count = 0
 
-        # Valós energiaadatok: a korábbi INSERT OR IGNORE helyett UPSERT.
-        # Ha ugyanaz az időpont korábban csak időjárási/jövőbeli sorként létezett,
-        # a most megérkezett valós energiaértékek felülírják a NULL értékeket.
         for i, ts in enumerate(timestamps):
             dt_string = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
             solar = (
@@ -120,8 +119,6 @@ def fetch_and_store_data():
             ))
             changed_count += 1
 
-        # Időjárási adatok a jövőbeli időpontokra. Ezek nem törlik a már meglévő
-        # valós energiaadatokat.
         for t_str, w_info in weather_dict.items():
             cursor.execute('''
                 INSERT INTO power_production
@@ -142,12 +139,47 @@ def fetch_and_store_data():
             ))
 
         conn.commit()
-        conn.close()
         print(f"Adatbázis frissítve! Módosított/kezelt sorok: {changed_count}.")
+        print("AI predikciók futtatása és frissítése...")
+        
+        df = pd.read_sql_query("SELECT * FROM power_production", conn)
+        
+        train_data = df.dropna(subset=["solar_mw", "wind_mw", "temperature_2m", "wind_speed_10m"])
+        
+        if not train_data.empty:
+            rf_solar = RandomForestRegressor(n_estimators=100, random_state=42)
+            rf_wind = RandomForestRegressor(n_estimators=100, random_state=42)
+            
+            rf_solar.fit(train_data[["temperature_2m", "shortwave_radiation", "cloud_cover"]], train_data["solar_mw"])
+            rf_wind.fit(train_data[["wind_speed_10m"]], train_data["wind_mw"])
+            
+            df['timestamp_dt'] = pd.to_datetime(df['timestamp'])
+            jelenlegi_ido = pd.Timestamp.now()
+            
+            mask = (df["ai_solar_mw"].isna() | (df['timestamp_dt'] > jelenlegi_ido)) & df["temperature_2m"].notna()
+            
+            rows_to_predict = df[mask]
+            
+            if not rows_to_predict.empty:
+                for index, row in rows_to_predict.iterrows():
+                    pred_solar = rf_solar.predict([[row["temperature_2m"], row["shortwave_radiation"], row["cloud_cover"]]])[0]
+                    pred_wind = rf_wind.predict([[row["wind_speed_10m"]]])[0]
+                    
+                    cursor.execute("""
+                        UPDATE power_production 
+                        SET ai_solar_mw = ?, ai_wind_mw = ? 
+                        WHERE id = ?
+                    """, (round(pred_solar, 2), round(pred_wind, 2), row["id"]))
+                
+                conn.commit()
+                print(f"Sikeresen lementve/frissítve {len(rows_to_predict)} új AI predikció!")
+            else:
+                print("Minden lezárt sornál van AI predikció, jövőbeli adat pedig jelenleg nincs.")
+
+        conn.close()
 
     except Exception as e:
         print(f"Hiba a letöltés során: {e}")
-
 
 if __name__ == "__main__":
     init_db()
