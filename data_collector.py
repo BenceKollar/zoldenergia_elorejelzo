@@ -20,6 +20,14 @@ def init_db():
             shortwave_radiation REAL
         )
     ''')
+    try:
+            cursor = conn.cursor()
+            cursor.execute("ALTER TABLE power_production ADD COLUMN ai_solar_mw REAL;")
+            cursor.execute("ALTER TABLE power_production ADD COLUMN ai_wind_mw REAL;")
+            conn.commit()
+            print("Új AI oszlopok sikeresen létrehozva az adatbázisban!")
+        except sqlite3.OperationalError:
+            pass
     conn.commit()
     conn.close()
 
