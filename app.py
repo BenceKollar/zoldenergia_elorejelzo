@@ -115,10 +115,10 @@ def render_app():
         wind_acc = calculate_accuracy(df, 'wind_mw', 'ai_wind_mw', 24)
 
         with col1:
-            st.metric(label="☀️ Napenergia Pontosság", value=f"{solar_acc}%" if solar_acc else "Gyűjtés alatt...")
+            st.metric(label="☀️ Napenergia Pontosság", value=f"{solar_acc}%" if solar_acc is not None else "Gyűjtés alatt...")
             
         with col2:
-            st.metric(label="🌪️ Szélenergia Pontosság", value=f"{wind_acc}%" if wind_acc else "Gyűjtés alatt...")
+            st.metric(label="🌪️ Szélenergia Pontosság", value=f"{wind_acc}%" if wind_acc is not None else "Gyűjtés alatt...")
             
         st.divider() 
         st.write("Valós idejű hálózati adatok és AI jövőbeli becslések.")
