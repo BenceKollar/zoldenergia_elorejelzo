@@ -349,7 +349,7 @@ def render_app():
             st.warning("Nincs elegendő valós adat a hálózati elemzéshez.")
     elif page == "💾 Adatbázis és Export":
         st.title("💾 Nyers Adatbázis és CSV Export")
-        st.write("Itt böngészheted az SQLite adatbázisban rögzített összes múltbéli mérést (a jövőbeli becslések nélkül).")
+        st.write("Itt található az SQLite adatbázisban rögzített összes múltbéli mérést.")
         
         real_df = df.dropna(subset=["solar_mw", "wind_mw"]).copy()
         
